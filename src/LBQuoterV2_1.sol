@@ -17,7 +17,7 @@ import {ILBRouter} from "./interfaces/ILBRouter.sol";
  * @author Trader Joe
  * @notice Helper contract to determine best path through multiple markets
  */
-contract LBQuoter {
+contract LBQuoterV2_1 {
     using Uint256x256Math for uint256;
 
     error LBQuoter_InvalidLength();
