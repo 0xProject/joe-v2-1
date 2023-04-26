@@ -8,6 +8,7 @@ import {Constants} from "./libraries/Constants.sol";
 import {JoeLibrary} from "./libraries/JoeLibrary.sol";
 import {PriceHelper} from "./libraries/PriceHelper.sol";
 import {Uint256x256Math} from "./libraries/math/Uint256x256Math.sol";
+import {SafeCast} from "./libraries/math/SafeCast.sol";
 
 import {ILBFactory, ILBPair} from "./interfaces/ILBPairFactory.sol";
 import {ILBRouter} from "./interfaces/ILBRouter.sol";
@@ -19,6 +20,7 @@ import {ILBRouter} from "./interfaces/ILBRouter.sol";
  */
 contract LBQuoterV2_1 {
     using Uint256x256Math for uint256;
+    using SafeCast for uint256;
 
     error LBQuoter_InvalidLength();
 
@@ -121,16 +123,14 @@ contract LBQuoterV2_1 {
 
                                 // Getting current price
                                 uint24 activeId = LBPairsAvailable[j].LBPair.getActiveId();
-                                quote.virtualAmountsWithoutSlippage[i + 1] = uint128(
-                                    _getV2Quote(
-                                        quote.virtualAmountsWithoutSlippage[i] - fees,
-                                        activeId,
-                                        quote.binSteps[i],
-                                        swapForY
-                                    )
+                                quote.virtualAmountsWithoutSlippage[i + 1] = _getV2Quote(
+                                    quote.virtualAmountsWithoutSlippage[i] - fees,
+                                    activeId,
+                                    quote.binSteps[i],
+                                    swapForY
                                 );
 
-                                quote.fees[i] = (fees * 1e18) / quote.amounts[i]; // fee percentage in amountIn
+                                quote.fees[i] = ((uint256(fees) * 1e18) / quote.amounts[i]).safe128(); // fee percentage in amountIn
                             }
                         } catch {}
                     }
@@ -191,17 +191,15 @@ contract LBQuoterV2_1 {
                                 // Getting current price
                                 uint24 activeId = LBPairsAvailable[j].LBPair.getActiveId();
                                 quote.virtualAmountsWithoutSlippage[i - 1] =
-                                    uint128(
-                                        _getV2Quote(
-                                            quote.virtualAmountsWithoutSlippage[i],
-                                            activeId,
-                                            quote.binSteps[i - 1],
-                                            !swapForY
-                                        )
+                                    _getV2Quote(
+                                        quote.virtualAmountsWithoutSlippage[i],
+                                        activeId,
+                                        quote.binSteps[i - 1],
+                                        !swapForY
                                     ) +
                                     fees;
 
-                                quote.fees[i - 1] = (fees * 1e18) / quote.amounts[i - 1]; // fee percentage in amountIn
+                                quote.fees[i - 1] = ((uint256(fees) * 1e18) / quote.amounts[i - 1]).safe128(); // fee percentage in amountIn
                             }
                         } catch {}
                     }
@@ -225,13 +223,14 @@ contract LBQuoterV2_1 {
         bool swapForY
     ) internal pure returns (uint128 quote) {
         if (swapForY) {
-            quote = uint128(
-                PriceHelper.getPriceFromId(activeId, uint16(binStep)).mulShiftRoundDown(amount, Constants.SCALE_OFFSET)
-            );
+            quote = PriceHelper
+                .getPriceFromId(activeId, uint16(binStep))
+                .mulShiftRoundDown(amount, Constants.SCALE_OFFSET)
+                .safe128();
         } else {
-            quote = uint128(
-                amount.shiftDivRoundDown(Constants.SCALE_OFFSET, PriceHelper.getPriceFromId(activeId, uint16(binStep)))
-            );
+            quote = amount
+                .shiftDivRoundDown(Constants.SCALE_OFFSET, PriceHelper.getPriceFromId(activeId, uint16(binStep)))
+                .safe128();
         }
     }
 }
