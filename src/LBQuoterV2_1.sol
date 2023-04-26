@@ -211,25 +211,6 @@ contract LBQuoter {
     }
 
     /**
-     * @dev Forked from JoeLibrary
-     * @dev Doesn't rely on the init code hash of the factory
-     * @param pair Address of the pair
-     * @param tokenA Address of token A
-     * @param tokenB Address of token B
-     * @return reserveA Reserve of token A in the pair
-     * @return reserveB Reserve of token B in the pair
-     */
-    function _getReserves(
-        address pair,
-        address tokenA,
-        address tokenB
-    ) internal view returns (uint256 reserveA, uint256 reserveB) {
-        (address token0, ) = JoeLibrary.sortTokens(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1, ) = IJoePair(pair).getReserves();
-        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-    }
-
-    /**
      * @dev Calculates a quote for a V2 pair
      * @param amount Amount in to consider
      * @param activeId Current active Id of the considred pair
